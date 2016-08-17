@@ -4,6 +4,7 @@ import Entity from "../../../lib/Entity/Entity";
 import Entry from "../../../lib/Entry";
 import Field from "../../../lib/Field/Field";
 import ReferenceField from "../../../lib/Field/ReferenceField";
+import EmbeddedListField from "../../../lib/Field/EmbeddedListField";
 import ReferenceManyField from "../../../lib/Field/ReferenceManyField";
 import View from "../../../lib/View/View";
 import ListView from "../../../lib/View/ListView";
@@ -202,6 +203,32 @@ describe('View', function() {
             };
 
             view.addField(field1).addField(field2);
+
+            field1.validation().validator = function () {
+                throw new Error('Field "Complex" is not valid.');
+            };
+            field2.validation().validator = function () {
+                return true;
+            };
+
+            assert.throw(function () { view.validate(entry); }, Error, 'Field "Complex" is not valid.');
+        });
+
+        it('should call validator on each field recursively', function(){
+            var entry = new Entry(),
+                view = new View('myView'),
+                fielde = new EmbeddedListField('list'),
+                field1 = new Field('notValidable').label('Complex'),
+                field2 = new Field('simple').label('Simple');
+
+            entry.values = {
+                notValidable: false,
+                simple: 1
+            };
+
+            fielde.targetFields([field1]);
+
+            view.addField(fielde).addField(field2);
 
             field1.validation().validator = function () {
                 throw new Error('Field "Complex" is not valid.');
